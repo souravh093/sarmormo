@@ -12,14 +12,23 @@ import {
 
 import { Button } from "../ui/button";
 import { Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { deleteSummary } from "@/action/summary-action";
+import { toast } from "sonner";
 
-const DeleteButton = ({summaryId} : {summaryId: string}) => {
+const DeleteButton = ({ summaryId }: { summaryId: string }) => {
   const [open, setOpen] = useState(false);
-
+  const [isPending, startTransition] = useTransition();
   const handleDelete = async () => {
-    console.log("Deleting summary...");
-    setOpen(false);
+    startTransition(async () => {
+      const result = await deleteSummary({ summaryId });
+
+      if (!result.success) {
+        toast.error("Failed to delete summary");
+      }
+
+      setOpen(false);
+    });
   };
   return (
     <div>
@@ -56,7 +65,7 @@ const DeleteButton = ({summaryId} : {summaryId: string}) => {
               variant={"ghost"}
               className="text-gray-400 bg-gray-900 border border-gray-200 hover:text-rose-100 hover:bg-rose-500 hover:border-rose-600 "
             >
-              Delete
+              {isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
