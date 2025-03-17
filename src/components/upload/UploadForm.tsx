@@ -1,10 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useState } from "react";
 import UploadFormInput from "./upload-form-input";
 import { z } from "zod";
 import { useUploadThing } from "@/utils/uploadthing";
 import { toast } from "sonner";
+import {
+  generatePdfSummary,
+  storePdfSummaryAction,
+} from "@/action/upload-actions";
 
 const schema = z.object({
   file: z
@@ -18,6 +22,9 @@ const schema = z.object({
 });
 
 const UploadForm = () => {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const { startUpload } = useUploadThing("pdfUploader", {
     onClientUploadComplete: () => {
       toast.success("✅ Upload complete!");
@@ -29,48 +36,82 @@ const UploadForm = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const file = formData.get("file") as File;
-
-    if (!file) {
-      toast.error("⚠️ Please select a file.");
-      return;
-    }
-
-    const validateFields = schema.safeParse({ file });
-
-    if (!validateFields.success) {
-      toast.error(validateFields.error.flatten().fieldErrors.file?.[0] ?? "Invalid file");
-      return;
-    }
-
-    toast("🔃 Uploading PDF...");
-
-    console.log("Uploading file:", file);
 
     try {
-      console.log("Starting upload...");
+      setIsLoading(true);
+      const formData = new FormData(e.currentTarget);
+      const file = formData.get("file") as File;
+
+      if (!file) {
+        toast.error("⚠️ Please select a file.");
+        return;
+      }
+
+      const validateFields = schema.safeParse({ file });
+
+      // Check if the file is valid
+      if (!validateFields.success) {
+        toast.error(
+          validateFields.error.flatten().fieldErrors.file?.[0] ?? "Invalid file"
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      toast("🔃 Uploading PDF...");
+
+      // Start the upload
       const response = await startUpload([file]);
 
       if (!response) {
         toast.error("❌ Upload failed. Try again.");
+        setIsLoading(false);
         return;
       }
 
       toast.success("✅ PDF uploaded successfully!");
-      console.log("Upload response:", response);
-    } catch (error) {
-      console.log("Upload error");
-      console.error("Upload error:", error);
-      toast.error("❌ An error occurred. Please try again.");
-    }
 
-    toast("🎉 All done!");
+      // parse the file
+      const result = await generatePdfSummary(response);
+
+      const { data = null, message = null } = result || {};
+
+      if (data) {
+        let storeResult: any;
+
+        if (data?.summary) {
+          storeResult = await storePdfSummaryAction({
+            summary: data.summary,
+            fileUrl: response[0].serverData.file.url,
+            title: data.title,
+            fileName: file.name,
+          });
+
+          toast.success("✅ Summary Generated");
+
+          formRef.current?.reset();
+
+          setIsLoading(false);
+
+          // todo: Redirect to the summary page
+        }
+      }
+
+      console.log({ message });
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Error occurred", error);
+      formRef.current?.reset();
+    }
   };
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-2xl mx-auto">
-      <UploadFormInput onSubmit={handleSubmit} />
+      <UploadFormInput
+        isLoading={isLoading}
+        ref={formRef}
+        onSubmit={handleSubmit}
+      />
     </div>
   );
 };
