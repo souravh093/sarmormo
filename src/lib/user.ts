@@ -29,7 +29,7 @@ export async function hasReachedUploadLimit(
   const isPro =
     pricePlans.find((plan) => plan.priceId === priceId)?.id === "pro";
 
-  const uploadLimit: number = isPro ? 1000 : 1;
+  const uploadLimit: number = isPro ? 1000 : 19;
 
   return { hasReachedLimit: uploadCount >= uploadLimit, uploadLimit };
 }
