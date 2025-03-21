@@ -74,6 +74,7 @@ const UploadForm = () => {
       toast.success("✅ PDF uploaded successfully!");
 
       // parse the file
+      // @ts-ignore
       const result = await generatePdfSummary(response);
 
       const { data = null, message = null } = result || {};

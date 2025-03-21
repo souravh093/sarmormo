@@ -1,9 +1,26 @@
 import BgGradient from "@/components/common/bg-gradient";
 import UploadForm from "@/components/upload/UploadForm";
 import UploadHeader from "@/components/upload/UploadHeader";
+import { hasReachedUploadLimit } from "@/lib/user";
+import { currentUser } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 import React from "react";
 
-const Upload = () => {
+const Upload = async () => {
+  const user = await currentUser();
+  const userId = user?.id;
+  const email = user?.emailAddresses?.[0]?.emailAddress;
+  
+  if (!userId && !email) {
+    redirect("/sign-in");
+  }
+
+  const { hasReachedLimit } = await hasReachedUploadLimit(userId, email);
+
+  if(hasReachedLimit) {
+    redirect("/dashboard")
+  }
+
   return (
     <section>
       <BgGradient />

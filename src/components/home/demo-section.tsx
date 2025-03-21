@@ -1,7 +1,11 @@
 import { Pizza } from "lucide-react";
 import React from "react";
+import SummaryViewer from "../summaries/summary-viewer";
+import { getSummary } from "@/constant/summaryDetailsData";
 
-const DemoSection = () => {
+const DemoSection = async () => {
+  const summary = await getSummary();
+  console.log(summary);
   return (
     <section className="relative">
       <div className="py-12 lg:py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 lg:pt-10">
@@ -27,14 +31,14 @@ const DemoSection = () => {
             <h3 className="font-bold text-3xl max-w-2xl mx-auto px-4 sm:px-6">
               Watch how Sarmormo transforms{" "}
               <span className="bg-linear-to-r from-rose-500 to-rose-700 bg-clip-text text-transparent">
-                this Next.js course PDF
+                this Sourave Resume PDF
               </span>{" "}
               into an easy-to-read summary!
             </h3>
           </div>
 
-          <div className="flex justify-center items-center px-2 sm:px-4 lg:px-6">
-            {/* {summary viewer} */}
+          <div className="px-2 sm:px-4 lg:px-6">
+            <SummaryViewer summary={summary} />
           </div>
         </div>
       </div>
